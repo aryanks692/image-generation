@@ -23,23 +23,20 @@ const App: React.FC = () => {
 
     setError(null);
 
-    // If API_KEY is missing in the process environment, we must use the window.aistudio selector
-    // This is especially common when running locally on desktop
-    if (!process.env.API_KEY || isHighQuality) {
+    // Mandate key selection if using Gemini 3 Pro Image or if the API_KEY is missing
+    if (isHighQuality || !process.env.API_KEY) {
       if (window.aistudio) {
         try {
           const hasKey = await window.aistudio.hasSelectedApiKey();
           if (!hasKey) {
             await window.aistudio.openSelectKey();
-            // Proceed assuming the user will select a key or that it was handled
+            // Proceed immediately after triggering the dialog to avoid race conditions
           }
         } catch (e) {
-          console.error("API Key selection error:", e);
-          setError("An API key is required to generate images. Please select one using the prompt.");
-          return;
+          console.error("Key selection error:", e);
         }
       } else if (!process.env.API_KEY) {
-        setError("API Key missing. Please set process.env.API_KEY in your environment.");
+        setError("API Key is missing. If you are running locally, please set process.env.API_KEY or use the AI Studio preview environment.");
         return;
       }
     }
@@ -66,17 +63,15 @@ const App: React.FC = () => {
       setImages(prev => [newImage, ...prev]);
       setActiveImageId(newImage.id);
     } catch (err: any) {
-      console.error("Generation Error Details:", err);
-      let msg = err.message || "Generation failed. Please check your internet connection and API key.";
-      
+      console.error("Generation error:", err);
+      let msg = err.message || "Generation failed. Please try again.";
+
+      // Handle specific error code for key/project issues
       if (err.message?.includes("Requested entity was not found")) {
         msg = "Project configuration error. Please re-select your API key.";
-        await window.aistudio?.openSelectKey();
-      } else if (err.message?.includes("API key not valid")) {
-        msg = "The API key provided is invalid. Please select a valid key.";
-        await window.aistudio?.openSelectKey();
+        if (window.aistudio) await window.aistudio.openSelectKey();
       }
-      
+
       setError(msg);
     } finally {
       setIsGenerating(false);

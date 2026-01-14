@@ -4,13 +4,8 @@ import { GenerationConfig, ModelName } from "../types";
 export const generateAIImage = async (config: GenerationConfig): Promise<string> => {
   const { prompt, aspectRatio, isHighQuality, imageSize = "1K" } = config;
   
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key is missing. Please ensure an API key is selected or provided.");
-  }
-
-  // Always create a fresh instance to use the latest injected key
-  const ai = new GoogleGenAI({ apiKey });
+  // Create a fresh instance using the key available in the context
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   
   const model = isHighQuality ? ModelName.PRO : ModelName.FLASH;
 
