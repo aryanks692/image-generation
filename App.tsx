@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { generateAIImage } from './services/geminiService';
 import { AspectRatio, GeneratedImage, ModelName, ImageSize } from './types';
@@ -23,11 +24,12 @@ const App: React.FC = () => {
 
     setError(null);
 
+    // API Key selection is mandatory for high-quality models like gemini-3-pro-image-preview
     if (isHighQuality) {
       try {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
+        const hasKey = await window.aistudio?.hasSelectedApiKey();
         if (!hasKey) {
-          await window.aistudio.openSelectKey();
+          await window.aistudio?.openSelectKey();
         }
       } catch (e) {
         console.error("API Key selection error:", e);
@@ -59,9 +61,10 @@ const App: React.FC = () => {
       setActiveImageId(newImage.id);
     } catch (err: any) {
       let msg = "Generation failed. Please try again.";
+      // If the error suggests project/entity issues, prompt for key re-selection
       if (err.message?.includes("Requested entity was not found")) {
         msg = "Project settings mismatch. Please re-select your API key.";
-        if (isHighQuality) await window.aistudio.openSelectKey();
+        await window.aistudio?.openSelectKey();
       }
       setError(msg);
     } finally {

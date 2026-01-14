@@ -24,14 +24,13 @@ export enum ModelName {
 }
 
 declare global {
-  // Fix: Define AIStudio interface to match the global type name expected by the compiler
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
     openSelectKey: () => Promise<void>;
   }
 
   interface Window {
-    // Fix: Remove the readonly modifier to match the existing declaration in the environment and resolve the modifier mismatch error
-    aistudio: AIStudio;
+    // Marked as optional to ensure compatibility with environmental type definitions
+    aistudio?: AIStudio;
   }
 }
