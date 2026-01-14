@@ -1,12 +1,16 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { GenerationConfig, ModelName } from "../types";
 
 export const generateAIImage = async (config: GenerationConfig): Promise<string> => {
   const { prompt, aspectRatio, isHighQuality, imageSize = "1K" } = config;
   
-  // Fix: Create a new instance right before the call and use process.env.API_KEY directly as per guidelines
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please ensure an API key is selected or provided.");
+  }
+
+  // Always create a fresh instance to use the latest injected key
+  const ai = new GoogleGenAI({ apiKey });
   
   const model = isHighQuality ? ModelName.PRO : ModelName.FLASH;
 
@@ -24,10 +28,9 @@ export const generateAIImage = async (config: GenerationConfig): Promise<string>
       },
     });
 
-    // Find the image part in candidates
     const candidate = response.candidates?.[0];
     if (!candidate?.content?.parts) {
-      throw new Error("No image generated in response parts.");
+      throw new Error("The model did not return any image parts. Try a different prompt.");
     }
 
     for (const part of candidate.content.parts) {
@@ -36,7 +39,7 @@ export const generateAIImage = async (config: GenerationConfig): Promise<string>
       }
     }
 
-    throw new Error("Could not find image data in the response.");
+    throw new Error("No image data found in the model response.");
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     throw error;

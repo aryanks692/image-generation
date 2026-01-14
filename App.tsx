@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { generateAIImage } from './services/geminiService';
 import { AspectRatio, GeneratedImage, ModelName, ImageSize } from './types';
 import Sidebar from './components/Sidebar';
@@ -24,16 +23,23 @@ const App: React.FC = () => {
 
     setError(null);
 
-    // API Key selection is mandatory for high-quality models like gemini-3-pro-image-preview
-    if (isHighQuality) {
-      try {
-        const hasKey = await window.aistudio?.hasSelectedApiKey();
-        if (!hasKey) {
-          await window.aistudio?.openSelectKey();
+    // If API_KEY is missing in the process environment, we must use the window.aistudio selector
+    // This is especially common when running locally on desktop
+    if (!process.env.API_KEY || isHighQuality) {
+      if (window.aistudio) {
+        try {
+          const hasKey = await window.aistudio.hasSelectedApiKey();
+          if (!hasKey) {
+            await window.aistudio.openSelectKey();
+            // Proceed assuming the user will select a key or that it was handled
+          }
+        } catch (e) {
+          console.error("API Key selection error:", e);
+          setError("An API key is required to generate images. Please select one using the prompt.");
+          return;
         }
-      } catch (e) {
-        console.error("API Key selection error:", e);
-        setError("Please select a valid API key for high-quality generation.");
+      } else if (!process.env.API_KEY) {
+        setError("API Key missing. Please set process.env.API_KEY in your environment.");
         return;
       }
     }
@@ -60,12 +66,17 @@ const App: React.FC = () => {
       setImages(prev => [newImage, ...prev]);
       setActiveImageId(newImage.id);
     } catch (err: any) {
-      let msg = "Generation failed. Please try again.";
-      // If the error suggests project/entity issues, prompt for key re-selection
+      console.error("Generation Error Details:", err);
+      let msg = err.message || "Generation failed. Please check your internet connection and API key.";
+      
       if (err.message?.includes("Requested entity was not found")) {
-        msg = "Project settings mismatch. Please re-select your API key.";
+        msg = "Project configuration error. Please re-select your API key.";
+        await window.aistudio?.openSelectKey();
+      } else if (err.message?.includes("API key not valid")) {
+        msg = "The API key provided is invalid. Please select a valid key.";
         await window.aistudio?.openSelectKey();
       }
+      
       setError(msg);
     } finally {
       setIsGenerating(false);
