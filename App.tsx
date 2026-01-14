@@ -22,21 +22,24 @@ const App: React.FC = () => {
     if (!currentPrompt.trim()) return;
     setError(null);
 
-    // FIXED: Using process.env.API_KEY as per project requirements
+    // Use process.env.API_KEY directly as required.
+    // The polyfill in index.html ensures this doesn't throw if undefined.
     const apiKey = process.env.API_KEY;
 
+    // High quality models (Gemini 3 Pro) REQUIRE an API key selection in this environment.
     if (isHighQuality || !apiKey) {
       if (window.aistudio) {
         try {
           const hasKey = await window.aistudio.hasSelectedApiKey();
           if (!hasKey) {
             await window.aistudio.openSelectKey();
+            // Proceeding immediately as per instructions to avoid race conditions
           }
         } catch (e) {
-          console.error("Key selection error:", e);
+          console.error("Key selection UI error:", e);
         }
       } else if (!apiKey) {
-        setError("API Key is missing. Please ensure an API key is available in your environment or via the selector.");
+        setError("API Key is missing. Please select an API key to continue.");
         return;
       }
     }
@@ -66,6 +69,7 @@ const App: React.FC = () => {
       console.error("Generation error:", err);
       let msg = err.message || "Generation failed. Please try again.";
 
+      // Handle common API errors related to project configuration
       if (err.message?.includes("Requested entity was not found")) {
         msg = "Project configuration error. Please re-select your API key.";
         if (window.aistudio) await window.aistudio.openSelectKey();

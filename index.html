@@ -51,6 +51,10 @@
       background: rgba(96, 165, 250, 0.4);
     }
   </style>
+  <script>
+    // Minimal polyfill to prevent crashes if process.env is accessed in the browser
+    window.process = window.process || { env: {} };
+  </script>
 <script type="importmap">
 {
   "imports": {
