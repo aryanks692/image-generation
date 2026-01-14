@@ -31,7 +31,7 @@ declare global {
   }
 
   interface Window {
-    // Fix: Use the AIStudio type and add the readonly modifier to match the existing declaration in the environment
-    readonly aistudio: AIStudio;
+    // Fix: Remove the readonly modifier to match the existing declaration in the environment and resolve the modifier mismatch error
+    aistudio: AIStudio;
   }
 }
