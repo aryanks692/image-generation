@@ -20,23 +20,23 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!currentPrompt.trim()) return;
-
     setError(null);
 
-    // Mandate key selection if using Gemini 3 Pro Image or if the API_KEY is missing
-    if (isHighQuality || !process.env.API_KEY) {
+    // FIXED: Using process.env.API_KEY as per project requirements
+    const apiKey = process.env.API_KEY;
+
+    if (isHighQuality || !apiKey) {
       if (window.aistudio) {
         try {
           const hasKey = await window.aistudio.hasSelectedApiKey();
           if (!hasKey) {
             await window.aistudio.openSelectKey();
-            // Proceed immediately after triggering the dialog to avoid race conditions
           }
         } catch (e) {
           console.error("Key selection error:", e);
         }
-      } else if (!process.env.API_KEY) {
-        setError("API Key is missing. If you are running locally, please set process.env.API_KEY or use the AI Studio preview environment.");
+      } else if (!apiKey) {
+        setError("API Key is missing. Please ensure an API key is available in your environment or via the selector.");
         return;
       }
     }
@@ -66,7 +66,6 @@ const App: React.FC = () => {
       console.error("Generation error:", err);
       let msg = err.message || "Generation failed. Please try again.";
 
-      // Handle specific error code for key/project issues
       if (err.message?.includes("Requested entity was not found")) {
         msg = "Project configuration error. Please re-select your API key.";
         if (window.aistudio) await window.aistudio.openSelectKey();
@@ -88,7 +87,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-slate-950">
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-slate-950 text-slate-200">
       <Sidebar 
         prompt={currentPrompt}
         setPrompt={setCurrentPrompt}
